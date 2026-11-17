@@ -4,165 +4,571 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Registro de Logística CPL</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+            --border-dark: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Previne rolagem da tela enquanto assina no canvas */
-        .no-touch-scroll {
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .header-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .btn-csv {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .nav-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .nav-tab {
+            background: var(--card-dark);
+            border: 1px solid var(--border-dark);
+            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--card-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border-dark);
+            color: white;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .quick-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .q-btn {
+            background: #334155;
+            border: none;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .q-btn:active {
+            background: var(--primary);
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .sig-container {
+            border: 1px dashed var(--border-dark);
+            border-radius: 8px;
+            background: #0f172a;
+            position: relative;
+            margin-top: 6px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 130px;
             touch-action: none;
-            overscroll-behavior: contain;
+            display: block;
+            cursor: crosshair;
         }
-        /* Estilo customizado para barra de rolagem da tabela */
-        ::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
+
+        .sig-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 10px;
             background: #1e293b;
+            border-top: 1px solid var(--border-dark);
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #475569;
+
+        .btn-clear {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-submit:active {
+            background: var(--primary-dark);
+        }
+
+        .record-item {
+            background: #0f172a;
+            border: 1px solid var(--border-dark);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #60a5fa;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-action {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 4px 8px;
             border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
         }
-        /* Estilos de Impressão para Comprovante */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #print-area, #print-area * {
-                visibility: visible;
-            }
-            #print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: white !important;
-                color: black !important;
-                padding: 20px;
-            }
+
+        .btn-delete {
+            background: var(--danger);
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+<body>
 
-    <!-- CABEÇALHO FIXO -->
-    <header class="bg-slate-950 border-b border-slate-800 sticky top-0 z-30 shadow-lg">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-xl shadow-md shadow-blue-900/40">
-                    <!-- Ícone Caminhão SVG -->
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM1 3h15v13H1V3zm15 5h4l3 4v4h-7V8z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white leading-tight">Registro de Logística CPL</h1>
-                    <p class="text-xs text-slate-400">Controle Simplificado de Corridas & Entregas</p>
-                </div>
-            </div>
-
-            <!-- Botões Rápidos do Topo -->
-            <div class="flex items-center gap-2">
-                <button onclick="exportarCSV()" title="Exportar para Excel/Planilhas" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition text-white text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-xl flex items-center gap-1.5 shadow">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                    </svg>
-                    <span class="hidden sm:inline">Exportar Planilha (CSV)</span>
-                    <span class="sm:hidden">CSV</span>
-                </button>
-            </div>
+    <header>
+        <div class="header-title">
+            <h1>Registro de Logística CPL</h1>
+            <p>Controle Simplificado de Corridas</p>
         </div>
-
-        <!-- NAVEGAÇÃO PRINCIPAL POR ABAS GRANDES -->
-        <nav class="max-w-6xl mx-auto px-4 pb-2 pt-1 grid grid-cols-2 gap-2">
-            <button id="tab-form-btn" onclick="switchTab('form')" class="py-3 px-4 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition bg-blue-600 text-white shadow-md">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span id="tab-form-label">Nova Corrida</span>
-            </button>
-            <button id="tab-list-btn" onclick="switchTab('list')" class="py-3 px-4 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                </svg>
-                <span>Planilha / Histórico</span>
-                <span id="badge-count" class="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full font-extrabold">0</span>
-            </button>
-        </nav>
+        <button class="btn-csv" onclick="exportarCSV()">📥 CSV</button>
     </header>
 
-    <!-- MENSAGEM DE FEEDBACK (TOAST) -->
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl font-semibold text-sm flex items-center gap-2 transition-all">
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-        <span id="toast-msg">Salvo com sucesso!</span>
+    <div class="nav-tabs">
+        <div class="nav-tab active" id="tab-form" onclick="mudarAba('form')">+ Nova Corrida</div>
+        <div class="nav-tab" id="tab-list" onclick="mudarAba('list')">Histórico (<span id="count-badge">0</span>)</div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL -->
-    <main class="flex-1 max-w-6xl w-full mx-auto p-4 pb-24">
-
-        <!-- ========================================== -->
-        <!-- SEÇÃO 1: FORMULÁRIO DE REGISTRO DE CORRIDA -->
-        <!-- ========================================== -->
-        <section id="section-form" class="space-y-5">
+    <!-- ABA FORMULÁRIO -->
+    <div id="view-form" class="view-section active">
+        <form id="log-form" onsubmit="salvarRegistro(event)">
             
-            <!-- Banner de Edição (aparece só ao editar registro existente) -->
-            <div id="edit-banner" class="hidden bg-amber-500/20 border border-amber-500/50 rounded-2xl p-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span class="bg-amber-500 text-slate-950 font-bold text-xs px-2.5 py-1 rounded-lg uppercase">Editando</span>
-                    <p class="text-sm text-amber-200 font-medium">Atualizando corrida existente (Ex: finalizar entrega e assinar).</p>
+            <div class="card">
+                <div class="card-title">1. Dados da Coleta & Carga</div>
+                
+                <div class="form-group">
+                    <label>A. Data *</label>
+                    <input type="date" id="data" required>
                 </div>
-                <button type="button" onclick="resetForm()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl font-semibold">
-                    Cancelar Edição
-                </button>
+
+                <div class="form-group">
+                    <label>B. Tipo de Carga *</label>
+                    <input type="text" id="tipoCarga" placeholder="Ex: Medicamento, Instrumental..." required>
+                    <div class="quick-btns">
+                        <button type="button" class="q-btn" onclick="setCampo('tipoCarga', 'Medicamento')">Medicamento</button>
+                        <button type="button" class="q-btn" onclick="setCampo('tipoCarga', 'Instrumental')">Instrumental</button>
+                        <button type="button" class="q-btn" onclick="setCampo('tipoCarga', 'Rouparia')">Rouparia</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>C. Nº de Volumes *</label>
+                    <input type="number" id="volumes" min="1" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>D. Origem *</label>
+                    <input type="text" id="origem" placeholder="Ex: CME, CAF, Lavanderia..." required>
+                    <div class="quick-btns">
+                        <button type="button" class="q-btn" onclick="setCampo('origem', 'CME')">CME</button>
+                        <button type="button" class="q-btn" onclick="setCampo('origem', 'CAF')">CAF</button>
+                        <button type="button" class="q-btn" onclick="setCampo('origem', 'Lavanderia')">Lavanderia</button>
+                    </div>
+                </div>
             </div>
 
-            <form id="ride-form" onsubmit="saveRide(event)" class="space-y-5">
-                <input type="hidden" id="ride-id">
-
-                <!-- BLOCO 1: DADOS DA COLETA E CARGA (Colunas A a G) -->
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                        <h2 class="text-base sm:text-lg font-bold text-blue-400 flex items-center gap-2">
-                            <span class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm font-extrabold">1</span>
-                            Dados da Coleta & Carga
-                        </h2>
-                        <span class="text-xs text-slate-400">Colunas A – G</span>
+            <div class="card">
+                <div class="card-title">2. Tempos de Transporte</div>
+                <div class="time-grid">
+                    <div class="form-group">
+                        <label>Coleta *</label>
+                        <input type="time" id="horaColeta" required>
                     </div>
+                    <div class="form-group">
+                        <label>Entrega *</label>
+                        <input type="time" id="horaEntrega" required>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- A: Data -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">A. Data *</label>
-                            <input type="date" id="field-data" required
-                                class="w-full bg-slate-900 border border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-xl px-4 py-3.5 text-base text-white outline-none">
+            <div class="card">
+                <div class="card-title">3. Assinaturas</div>
+                
+                <div class="form-group">
+                    <label>Motorista</label>
+                    <input type="text" id="nomeMotorista" placeholder="Nome do Motorista">
+                    <div class="sig-container">
+                        <canvas id="sigMotorista"></canvas>
+                        <div class="sig-actions">
+                            <span style="font-size:0.75rem; color:var(--text-muted);">Assine acima</span>
+                            <button type="button" class="btn-clear" onclick="limparAssinatura('sigMotorista')">Limpar</button>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- B: Tipo de Carga -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">B. Tipo de Carga *</label>
-                            <input type="text" id="field-tipo-carga" required placeholder="Ex: Medicamento, Instrumental, Rouparia..."
-                                class="w-full bg-slate-900 border border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-xl px-4 py-3.5 text-base text-white outline-none">
-                            <!-- Sugestões rápidas com 1 toque -->
-                            <div class="flex flex-wrap gap-1.5 mt-2">
-                                <button type="button" onclick="setQuickValue('field-tipo-carga', 'Medicamento')" class="text-xs bg-slate-700 hover:bg-slate-600 active:bg-blue-600 text-slate-200 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer">Medicamento</button>
-                                <button type="button" onclick="setQuickValue('field-tipo-carga', 'Instrumental')" class="text-xs bg-slate-700 hover:bg-slate-600 active:bg-blue-600 text-slate-200 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer">Instrumental</button>
-                                <button type="button" onclick="setQuickValue('field-tipo-carga', 'Rouparia')" class="text-xs bg-slate-700 hover:bg-slate-600 active:bg-blue-600 text-slate-200 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer">Rouparia</button>
-                            </div>
+                <div class="form-group">
+                    <label>Recebedor</label>
+                    <input type="text" id="nomeRecebedor" placeholder="Nome do Recebedor">
+                    <div class="sig-container">
+                        <canvas id="sigRecebedor"></canvas>
+                        <div class="sig-actions">
+                            <span style="font-size:0.75rem; color:var(--text-muted);">Assine acima</span>
+                            <button type="button" class="btn-clear" onclick="limparAssinatura('sigRecebedor')">Limpar</button>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- C: Nº de volumes (Teclado Numérico Otimizado) -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">C. Nº de Volumes *</label>
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="field-volumes" required placeholder="0"
+            <button type="submit" class="btn-submit">Salvar Registro</button>
+        </form>
+    </div>
+
+    <!-- ABA HISTÓRICO -->
+    <div id="view-list" class="view-section">
+        <div id="registros-container">
+            <p style="text-align:center; color:var(--text-muted); padding: 20px;">Nenhum registro salvo ainda.</p>
+        </div>
+    </div>
+
+    <script>
+        // Inicialização de Datas e Horas padrão
+        document.getElementById('data').valueAsDate = new Date();
+        const agora = new Date().toTimeString().slice(0,5);
+        document.getElementById('horaColeta').value = agora;
+
+        function setCampo(id, valor) {
+            document.getElementById(id).value = valor;
+        }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            
+            if(aba === 'form') {
+                document.getElementById('tab-form').classList.add('active');
+                document.getElementById('view-form').classList.add('active');
+            } else {
+                document.getElementById('tab-list').classList.add('active');
+                document.getElementById('view-list').classList.add('active');
+                carregarRegistros();
+            }
+        }
+
+        // Configuração dos Canvases de Assinatura
+        const canvases = ['sigMotorista', 'sigRecebedor'];
+        const sigData = {};
+
+        canvases.forEach(id => {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            let desenhando = false;
+
+            function ajustarCanvas() {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                ctx.strokeStyle = '#f8fafc';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+            }
+            setTimeout(ajustarCanvas, 200);
+
+            canvas.addEventListener('mousedown', iniciarDesenho);
+            canvas.addEventListener('mousemove', desenhar);
+            canvas.addEventListener('mouseup', pararDesenho);
+            canvas.addEventListener('mouseleave', pararDesenho);
+
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); iniciarDesenho(e.touches[0]); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); desenhar(e.touches[0]); });
+            canvas.addEventListener('touchend', (e) => { e.preventDefault(); pararDesenho(); });
+
+            function obterPosicao(e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: (e.clientX || e.pageX) - rect.left,
+                    y: (e.clientY || e.pageY) - rect.top
+                };
+            }
+
+            function iniciarDesenho(e) {
+                desenhando = true;
+                const pos = obterPosicao(e);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+
+            function desenhar(e) {
+                if (!desenhando) return;
+                const pos = obterPosicao(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }
+
+            function pararDesenho() {
+                if (desenhando) {
+                    desenhando = false;
+                    sigData[id] = canvas.toDataURL();
+                }
+            }
+        });
+
+        function limparAssinatura(id) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            delete sigData[id];
+        }
+
+        function salvarRegistro(e) {
+            e.preventDefault();
+
+            const registro = {
+                id: Date.now(),
+                data: document.getElementById('data').value,
+                tipoCarga: document.getElementById('tipoCarga').value,
+                volumes: document.getElementById('volumes').value,
+                origem: document.getElementById('origem').value,
+                horaColeta: document.getElementById('horaColeta').value,
+                horaEntrega: document.getElementById('horaEntrega').value,
+                motorista: document.getElementById('nomeMotorista').value || 'Não informado',
+                recebedor: document.getElementById('nomeRecebedor').value || 'Não informado',
+                sigMot: sigData['sigMotorista'] || '',
+                sigRec: sigData['sigRecebedor'] || ''
+            };
+
+            let registros = JSON.parse(localStorage.getItem('cpl_registros') || '[]');
+            registros.unshift(registro);
+            localStorage.setItem('cpl_registros', JSON.stringify(registros));
+
+            alert('Registro salvo com sucesso!');
+            document.getElementById('log-form').reset();
+            document.getElementById('data').valueAsDate = new Date();
+            canvases.forEach(id => limparAssinatura(id));
+            mudarAba('list');
+        }
+
+        function carregarRegistros() {
+            const container = document.getElementById('registros-container');
+            const registros = JSON.parse(localStorage.getItem('cpl_registros') || '[]');
+            document.getElementById('count-badge').innerText = registros.length;
+
+            if (registros.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding: 20px;">Nenhum registro salvo ainda.</p>';
+                return;
+            }
+
+            container.innerHTML = registros.map(r => `
+                <div class="record-item">
+                    <div class="record-header">
+                        <span>${r.data} - ${r.tipoCarga} (${r.volumes} vol)</span>
+                        <span>${r.horaColeta} ➔ ${r.horaEntrega}</span>
+                    </div>
+                    <div><strong>Origem:</strong> ${r.origem}</div>
+                    <div><strong>Motorista:</strong> ${r.motorista}</div>
+                    <div><strong>Recebedor:</strong> ${r.recebedor}</div>
+                    <div class="record-actions">
+                        <button class="btn-action" onclick="gerarPDF(${r.id})">📄 PDF</button>
+                        <button class="btn-action btn-delete" onclick="excluirRegistro(${r.id})">🗑️ Excluir</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function excluirRegistro(id) {
+            if (confirm('Deseja realmente excluir este registro?')) {
+                let registros = JSON.parse(localStorage.getItem('cpl_registros') || '[]');
+                registros = registros.filter(r => r.id !== id);
+                localStorage.setItem('cpl_registros', JSON.stringify(registros));
+                carregarRegistros();
+            }
+        }
+
+        function gerarPDF(id) {
+            const registros = JSON.parse(localStorage.getItem('cpl_registros') || '[]');
+            const r = registros.find(item => item.id === id);
+            if (!r) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Comprovante de Logística - CPL Xpress", 14, 20);
+
+            doc.setFontSize(11);
+            doc.text(`Data: ${r.data}`, 14, 32);
+            doc.text(`Tipo de Carga: ${r.tipoCarga}`, 14, 40);
+            doc.text(`Volumes: ${r.volumes}`, 14, 48);
+            doc.text(`Origem: ${r.origem}`, 14, 56);
+            doc.text(`Horário Coleta: ${r.horaColeta} | Entrega: ${r.horaEntrega}`, 14, 64);
+            doc.text(`Motorista: ${r.motorista}`, 14, 72);
+            doc.text(`Recebedor: ${r.recebedor}`, 14, 80);
+
+            if(r.sigMot) {
+                doc.text("Assinatura Motorista:", 14, 95);
+                doc.addImage(r.sigMot, 'PNG', 14, 100, 60, 25);
+            }
+
+            if(r.sigRec) {
+                doc.text("Assinatura Recebedor:", 110, 95);
+                doc.addImage(r.sigRec, 'PNG', 110, 100, 60, 25);
+            }
+
+            doc.save(`logistica_${r.data}_${r.id}.pdf`);
+        }
+
+        function exportarCSV() {
+            const registros = JSON.parse(localStorage.getItem('cpl_registros') || '[]');
+            if (registros.length === 0) {
+                alert('Não há registros para exportar.');
+                return;
+            }
+
+            let csv = 'Data,TipoCarga,Volumes,Origem,Coleta,Entrega,Motorista,Recebedor\n';
+            registros.forEach(r => {
+                csv += `"${r.data}","${r.tipoCarga}","${r.volumes}","${r.origem}","${r.horaColeta}","${r.horaEntrega}","${r.motorista}","${r.recebedor}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8               <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="field-volumes" required placeholder="0"
                                 class="w-full bg-slate-900 border border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-xl px-4 py-3.5 text-lg font-bold text-white outline-none">
                         </div>
 
